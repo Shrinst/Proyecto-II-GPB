@@ -1,45 +1,70 @@
-#include <QApplication>
-#include "Myrect.h"
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <iostream>
-#include "Maze.h"
-#include <vector>
+#include <opencv2/highgui.hpp>
+#include <vector> 
 
+#include <iostream>
+
+using namespace cv;
 using namespace std;
 
-int main(int argc, char *argv[]){
-    QApplication a(argc, argv);
+int main( int argc, const char** argv ){
 
-    // create a scene
-    QGraphicsScene * scene = new QGraphicsScene();
+  Mat im = imread("urgot.jpg");
+  Mat img = imread("urgot1.jpg");
+  if(im.empty()){
+    cout << "No se pudo subir la imagen" << endl;
+  }
 
-    // create an item to add to the scene
-    MyRect * rect = new MyRect();
-    rect->setRect(0,0,0,0); // change the rect from 0x0 (default) to 100x100 pixels
+  //Rect myROI(0,0,150,150);
+  //Mat nueva;
+  //hconcat(im,img,nueva);
+  //Mat nueva1;
+  //hconcat(img,im,nueva1);
+  //Mat nueva2;
+  //vconcat(nueva,nueva1,nueva2);
+  //Mat croppedImage = im(myROI);
 
-    // add the item to the scene
-    scene->addItem(rect);
+  //imshow("Cropped", croppedImage);
 
-    // make rect focusable
-    rect->setFlag(QGraphicsItem::ItemIsFocusable);
-    rect->setFocus();
+  //DIVIDIR LA IMAGEN
+  Size s = im.size();
+  int rows = s.height;
+  int cols = s.width;
 
-    // create a view to visualize the scene
-    QGraphicsView * view = new QGraphicsView(scene);
-    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  vector<Mat> imagen;
+  //imshow("Nueva", nueva2);
+  int x_ = 3;//y
+  int y_ = 4;//x
+  int xx = cols/y_;
+  int yy = rows/x_;
+  for(int j = 0; j < x_; j++){
+    for(int i = 0; i < y_; i++){
+      Rect myROI(xx*i,yy*j,xx,yy);
+      Mat fragmento = im(myROI);
+      imagen.push_back(fragmento);
+    }
+  }
+  //REVOLVER IMAGEN
+  for (int i = 0; i < 10; ++i)
+  { 
+    int val = x_*y_;
+    swap(imagen[rand()%val],imagen[rand()%val]);
+  }
+  //RECONSTRUIR LA IMAGEN
+  vector<Mat> imagen1;
+  for(int j = 0; j < x_; j++){
+    Mat buena = imagen.at(j*y_);
+    for(int i = 1; i < y_; i++){
+      hconcat(buena,imagen.at((j*y_)+i),buena);
+    }
+    imagen1.push_back(buena);
+  }
+  Mat picture = imagen1.at(0);
+  for(int i = 0; i < imagen1.size()-1; i++){
+    vconcat(picture,imagen1.at(i+1),picture);
+  }
+  
+  imshow("Image", picture);
+  waitKey(0);
 
-    QGraphicsPixmapItem *fondo = new QGraphicsPixmapItem;
-    fondo->setPos(0,0);
-    fondo->setPixmap(QPixmap(":/images/img/space.jpg"));
-    scene->addItem(fondo);
-    // show the view
-    view->show();
-    view->setFixedSize(1200,550);
-    scene->setSceneRect(0,0,1200,550);
-
-    //==new code==
-
-    return a.exec();
+  return 0;
 }
